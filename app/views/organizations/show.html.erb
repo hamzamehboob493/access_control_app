@@ -1,0 +1,58 @@
+<!-- app/views/organizations/show.html.erb -->
+<div class="organization-header">
+  <h1><%= @organization.name %></h1>
+  <p class="organization-type"><%= @organization.organization_type.humanize %></p>
+  
+  <% if @organization.verified? %>
+    <span class="badge badge-success">Verified Organization</span>
+  <% end %>
+</div>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="organization-details">
+      <h3>About</h3>
+      <p><%= @organization.description %></p>
+      
+      <% if @organization.website.present? %>
+        <p><strong>Website:</strong> <%= link_to @organization.website, @organization.website, target: '_blank' %></p>
+      <% end %>
+    </div>
+
+    <% if @membership %>
+      <div class="membership-info">
+        <h3>Your Membership</h3>
+        <p><strong>Role:</strong> <%= @membership.role.humanize %></p>
+        <p><strong>Status:</strong> <%= @membership.status.humanize %></p>
+        <p><strong>Joined:</strong> <%= @membership.joined_at.strftime("%B %d, %Y") %></p>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="col-md-4">
+    <div class="organization-stats">
+      <h3>Organization Stats</h3>
+      <ul class="list-unstyled">
+        <li><strong>Total Members:</strong> <%= @organization.member_count %></li>
+        <li><strong>Created:</strong> <%= @organization.created_at.strftime("%B %Y") %></li>
+      </ul>
+    </div>
+
+    <% if policy(@organization).view_analytics? && @age_group_stats.present? %>
+      <div class="age-demographics">
+        <h3>Age Demographics</h3>
+        <%= pie_chart @age_group_stats.map { |group, count| [group&.name || 'Unknown', count] } %>
+      </div>
+    <% end %>
+
+    <div class="organization-actions">
+      <% if policy(@organization).update? %>
+        <%= link_to 'Edit Organization', edit_organization_path(@organization), class: 'btn btn-primary' %>
+      <% end %>
+      
+      <% if policy(@organization).view_analytics? %>
+        <%= link_to 'View Analytics', organization_analytics_path(@organization), class: 'btn btn-info' %>
+      <% end %>
+    </div>
+  </div>
+</div>

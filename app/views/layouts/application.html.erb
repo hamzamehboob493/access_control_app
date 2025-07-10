@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Access Control App</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+    <script>
+      // Auto-hide flash messages after 5 seconds
+      document.addEventListener('DOMContentLoaded', function() {
+        const flashMessages = document.querySelectorAll('[data-flash-message]');
+        flashMessages.forEach(function(message) {
+          setTimeout(function() {
+            message.style.transition = 'opacity 0.5s ease-in-out';
+            message.style.opacity = '0';
+            setTimeout(function() {
+              message.remove();
+            }, 500);
+          }, 5000);
+        });
+      });
+    </script>
+  </head>
+  <body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <%= link_to root_path, class: "flex-shrink-0 flex items-center" do %>
+              <h1 class="text-xl font-bold text-gray-900">Access Control</h1>
+            <% end %>
+          </div>
+          <div class="flex items-center space-x-4">
+            <% if current_user %>
+              <!-- User Menu -->
+              <div class="flex items-center space-x-4">
+                <%= link_to "Organizations", organizations_path, class: "text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium" %>
+                <div class="relative">
+                  <span class="text-gray-700 text-sm">
+                    Welcome, <%= current_user.first_name %>
+                  </span>
+                </div>
+                <%= link_to "Logout", logout_path, data: { turbo_method: :delete }, 
+                    class: "bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-red-700" %>
+              </div>
+            <% else %>
+              <%= link_to "Login", login_path, 
+                  class: "bg-indigo-600 text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-indigo-700" %>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </nav>
+    <!-- Flash Messages -->
+    <% if flash.any? && controller_name != "sessions" && controller_name != "users" %>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <% flash.each do |type, message| %>
+          <% 
+            css_class = case type.to_s
+                       when 'notice', 'success'
+                         'bg-green-100 border border-green-400 text-green-700'
+                       when 'alert', 'error'
+                         'bg-red-100 border border-red-400 text-red-700'
+                       when 'warning'
+                         'bg-yellow-100 border border-yellow-400 text-yellow-700'
+                       else
+                         'bg-blue-100 border border-blue-400 text-blue-700'
+                       end
+          %>
+          <div class="<%= css_class %> px-4 py-3 rounded shadow-md mb-4" data-flash-message>
+            <div class="flex justify-between items-center">
+              <span class="font-medium"><%= message %></span>
+              <button type="button" class="ml-4 text-current hover:text-gray-600 focus:outline-none" onclick="this.parentElement.parentElement.remove()">
+                <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <%= yield %>
+    </main>
+  </body>
+</html>
