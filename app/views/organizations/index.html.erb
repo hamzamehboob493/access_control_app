@@ -1,0 +1,66 @@
+<div class="max-w-6xl mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold text-gray-800 mb-6">Organizations</h1>
+
+  <% if @organizations.any? %>
+    <div class="overflow-x-auto rounded-lg shadow border border-gray-200">
+      <table class="min-w-full divide-y divide-gray-200 bg-white">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Website</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @organizations.each do |organization| %>
+            <tr>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-900">
+                <%= link_to organization.name, organization_path(organization) %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 capitalize">
+                <span class="inline-flex items-center px-4 py-1 text-sm font-medium text-gray-800 bg-gray-100 rounded-full shadow-sm">
+                  <%= organization.organization_type.humanize %>
+                </span>
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-600"><%= organization.description.presence || "-" %></td>
+              <td class="px-6 py-4 text-sm text-blue-500">
+                <% website = organization.website.presence %>
+                <% full_url = website =~ /\Ahttp(s)?:\/\// ? website : "https://#{website}" if website %>
+
+                <% if full_url %>
+                  <a href="<%= full_url %>" target="_blank" class="hover:underline text-blue-600">
+                    <%= website %>
+                  </a>
+                <% else %>
+                  <span class="text-gray-400">–</span>
+                <% end %>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-900 flex gap-4 items-center">
+                <% if policy(organization).update? %>
+                  <%= link_to edit_organization_path(organization), class: "text-indigo-600 hover:text-indigo-900", title: "Edit" do %>
+                    <i class="fas fa-pen-to-square"></i>
+                  <% end %>
+                <% end %>
+
+                <% if policy(organization).destroy? %>
+                  <%= link_to organization_path(organization), 
+                              data: { turbo_method: :delete, turbo_confirm: "Are you sure you want to delete this organization?" },
+                              class: "text-red-600 hover:text-red-800", title: "Delete" do %>
+                    <i class="fas fa-trash-alt"></i>
+                  <% end %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="flex flex-col items-center justify-center py-16 text-center border border-dashed border-gray-300 rounded-lg shadow-sm bg-white">
+      <p class="text-lg text-gray-600 mb-6">No organizations found. Start by creating your first organization.</p>
+      <%= link_to 'Create Organization', new_organization_path, class: "inline-block px-6 py-3 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 transition" %>
+    </div>
+  <% end %>
+</div>

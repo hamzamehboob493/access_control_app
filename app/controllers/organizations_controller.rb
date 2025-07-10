@@ -1,9 +1,14 @@
 class OrganizationsController < ApplicationController
+  include Pundit::Authorization
   before_action :authenticate_user!
   before_action :set_organization, only: [ :show, :edit, :update, :destroy, :analytics ]
 
   def index
-    @organizations = policy_scope(Organization).includes(:organization_memberships)
+    @organizations = policy_scope(Organization)
+                      .joins(:organization_memberships)
+                      .where(organization_memberships: { user_id: current_user.id })
+                      .includes(:organization_memberships)
+
     @organizations = @organizations.ransack(params[:q]).result if params[:q]
     @organizations = @organizations.page(params[:page])
   end
@@ -34,6 +39,28 @@ class OrganizationsController < ApplicationController
       redirect_to @organization, notice: "Organization created successfully."
     else
       render :new
+    end
+  end
+
+  def edit
+    authorize @organization
+  end
+
+  def update
+    authorize @organization
+    if @organization.update(organization_params)
+      redirect_to @organization, notice: "Organization updated successfully."
+    else
+      render :edit
+    end
+  end
+
+  def destroy
+    authorize @organization
+    if @organization.destroy
+      redirect_to organizations_path, notice: "Organization deleted successfully."
+    else
+      redirect_to organizations_path, alert: "Error while deleting organization"
     end
   end
 

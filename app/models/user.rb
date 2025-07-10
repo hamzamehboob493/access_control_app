@@ -53,6 +53,10 @@ class User < ApplicationRecord
     organization_memberships.exists?(organization: organization, role: "admin")
   end
 
+  def admin_of_any_organization?
+    organization_memberships.where(role: "admin").exists?
+  end
+
   # Format phone number for display
   def formatted_phone_number
     return phone_number unless phone_number.present?

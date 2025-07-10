@@ -1,0 +1,51 @@
+<div class="max-w-6xl mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold text-gray-800 mb-6">Organization Analytics</h1>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+      <h2 class="text-sm font-medium text-gray-500">Total Members</h2>
+      <p class="mt-2 text-2xl font-bold text-indigo-600"><%= @analytics_data[:total_members] %></p>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+      <h2 class="text-sm font-medium text-gray-500">Roles</h2>
+      <% @analytics_data[:members_by_role].each do |role, count| %>
+        <p class="mt-1 text-sm text-gray-700 capitalize"><%= role %>: <span class="font-semibold"><%= count %></span></p>
+      <% end %>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+      <h2 class="text-sm font-medium text-gray-500">Age Groups</h2>
+      <% @analytics_data[:members_by_age_group].each do |age_group, count| %>
+        <p class="mt-1 text-sm text-gray-700 capitalize"><%= age_group.presence || 'Unknown' %>: <span class="font-semibold"><%= count %></span></p>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Membership Growth Chart -->
+  <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Membership Growth</h2>
+
+    <% if @membership_growth.any? %>
+      <table class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-2 text-left font-medium text-gray-500">Month</th>
+            <th class="px-4 py-2 text-left font-medium text-gray-500">New Members</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @membership_growth.each do |month, count| %>
+            <tr>
+              <td class="px-4 py-2 text-gray-700"><%= month.strftime("%B %Y") %></td>
+              <td class="px-4 py-2 text-indigo-600 font-semibold"><%= count %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-sm text-gray-500">No membership growth data available.</p>
+    <% end %>
+  </div>
+</div>

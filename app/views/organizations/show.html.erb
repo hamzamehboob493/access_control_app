@@ -1,58 +1,100 @@
 <!-- app/views/organizations/show.html.erb -->
-<div class="organization-header">
-  <h1><%= @organization.name %></h1>
-  <p class="organization-type"><%= @organization.organization_type.humanize %></p>
-  
-  <% if @organization.verified? %>
-    <span class="badge badge-success">Verified Organization</span>
-  <% end %>
+
+<div class="bg-white shadow-xl rounded-2xl p-8 mb-10 border border-gray-200 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+  <!-- Organization Info -->
+  <div>
+    <h1 class="text-4xl font-bold text-gray-900 tracking-tight"><%= @organization.name %></h1>
+    <div class="mt-2 flex flex-wrap items-center gap-2">
+      <span class="inline-flex items-center px-3 py-1 text-sm font-medium bg-gray-100 text-gray-800 rounded-full">
+        <%= @organization.organization_type.humanize %>
+      </span>
+
+      <% if @organization.verified? %>
+        <span class="inline-flex items-center px-3 py-1 text-sm font-medium bg-green-100 text-green-800 rounded-full">
+          <svg class="w-4 h-4 mr-1 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+          </svg>
+          Verified Organization
+        </span>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="flex flex-wrap gap-3">
+    <% if policy(@organization).update? %>
+      <%= link_to 'Edit Organization',
+            edit_organization_path(@organization),
+            class: 'inline-flex items-center justify-center px-5 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-indigo-700 transition' %>
+    <% end %>
+
+    <% if policy(@organization).view_analytics? %>
+      <%= link_to 'View Analytics',
+            analytics_organization_path(@organization),
+            class: 'inline-flex items-center justify-center px-5 py-2 bg-teal-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-teal-700 transition' %>
+    <% end %>
+  </div>
 </div>
 
-<div class="row">
-  <div class="col-md-8">
-    <div class="organization-details">
-      <h3>About</h3>
-      <p><%= @organization.description %></p>
-      
+<!-- Main Layout Grid -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-10">
+  <!-- Main Content (Left) -->
+  <div class="xl:col-span-2 space-y-8">
+
+    <!-- About Section -->
+    <div class="bg-white border border-gray-200 shadow-lg rounded-2xl p-6">
+      <h3 class="text-2xl font-semibold text-gray-800 mb-4">About</h3>
+      <p class="text-gray-600 leading-relaxed"><%= @organization.description %></p>
+
       <% if @organization.website.present? %>
-        <p><strong>Website:</strong> <%= link_to @organization.website, @organization.website, target: '_blank' %></p>
+        <p class="mt-4">
+          <span class="font-medium text-gray-800">Website:</span>
+          <% website = @organization.website.presence %>
+          <% full_url = website =~ /\Ahttp(s)?:\/\// ? website : "https://#{website}" if website %>
+          <% if full_url %>
+            <a href="<%= full_url %>" target="_blank" class="ml-2 text-blue-600 hover:text-blue-800 hover:underline transition">
+              <%= website %>
+            </a>
+          <% else %>
+            <span class="text-gray-400">–</span>
+          <% end %>
+        </p>
       <% end %>
     </div>
 
+    <!-- Membership Info -->
     <% if @membership %>
-      <div class="membership-info">
-        <h3>Your Membership</h3>
-        <p><strong>Role:</strong> <%= @membership.role.humanize %></p>
-        <p><strong>Status:</strong> <%= @membership.status.humanize %></p>
-        <p><strong>Joined:</strong> <%= @membership.joined_at.strftime("%B %d, %Y") %></p>
+      <div class="bg-white border border-gray-200 shadow-lg rounded-2xl p-6">
+        <h3 class="text-2xl font-semibold text-gray-800 mb-4">Your Membership</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
+          <p><span class="font-medium text-gray-800">Role:</span> <%= @membership.role.humanize %></p>
+          <p><span class="font-medium text-gray-800">Status:</span> <%= @membership.status.humanize %></p>
+          <p><span class="font-medium text-gray-800">Joined:</span> <%= @membership.joined_at&.strftime("%B %d, %Y") %></p>
+        </div>
       </div>
     <% end %>
+
   </div>
 
-  <div class="col-md-4">
-    <div class="organization-stats">
-      <h3>Organization Stats</h3>
-      <ul class="list-unstyled">
-        <li><strong>Total Members:</strong> <%= @organization.member_count %></li>
-        <li><strong>Created:</strong> <%= @organization.created_at.strftime("%B %Y") %></li>
+  <!-- Sidebar (Right) -->
+  <div class="space-y-8">
+
+    <!-- Stats -->
+    <div class="bg-white border border-gray-200 shadow-lg rounded-2xl p-6">
+      <h3 class="text-2xl font-semibold text-gray-800 mb-4">Organization Stats</h3>
+      <ul class="text-gray-700 space-y-2">
+        <li><span class="font-medium text-gray-800">Total Members:</span> <%= @organization.member_count %></li>
+        <li><span class="font-medium text-gray-800">Created:</span> <%= @organization.created_at.strftime("%B %Y") %></li>
       </ul>
     </div>
 
+    <!-- Age Demographics -->
     <% if policy(@organization).view_analytics? && @age_group_stats.present? %>
-      <div class="age-demographics">
-        <h3>Age Demographics</h3>
-        <%= pie_chart @age_group_stats.map { |group, count| [group&.name || 'Unknown', count] } %>
+      <div class="bg-white border border-gray-200 shadow-lg rounded-2xl p-6">
+        <h3 class="text-2xl font-semibold text-gray-800 mb-4">Age Demographics</h3>
+        <%= pie_chart @age_group_stats.map { |group, count| [group || 'Unknown', count] }, library: { backgroundColor: ['#6366F1', '#06B6D4', '#10B981', '#F59E0B', '#EF4444'] } %>
       </div>
     <% end %>
 
-    <div class="organization-actions">
-      <% if policy(@organization).update? %>
-        <%= link_to 'Edit Organization', edit_organization_path(@organization), class: 'btn btn-primary' %>
-      <% end %>
-      
-      <% if policy(@organization).view_analytics? %>
-        <%= link_to 'View Analytics', organization_analytics_path(@organization), class: 'btn btn-info' %>
-      <% end %>
-    </div>
   </div>
 </div>
