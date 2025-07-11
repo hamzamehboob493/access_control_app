@@ -1,0 +1,341 @@
+<div class="bg-white shadow-xl rounded-2xl p-8 mb-10">
+  <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
+        Membership Details
+      </h1>
+      <p class="mt-2 text-gray-600">
+        <%= @organization.name %> membership information
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <%= link_to "Back to Members", organization_organization_memberships_path(@organization), 
+          class: "inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50" %>
+      <%= link_to "Back to Organization", @organization, 
+          class: "inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50" %>
+    </div>
+  </div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+  <!-- Member Information -->
+  <div class="bg-white shadow rounded-lg p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Member Information</h2>
+    <% if @membership.user && @membership.user.profile_completed? %>
+      <div class="space-y-4">
+        <div class="flex items-center">
+          <div class="flex-shrink-0 h-16 w-16">
+            <div class="h-16 w-16 rounded-full bg-indigo-100 flex items-center justify-center">
+              <span class="text-indigo-600 font-medium text-lg">
+                <%= @membership.user.first_name[0] %><%= @membership.user.last_name[0] %>
+              </span>
+            </div>
+          </div>
+          <div class="ml-4">
+            <h3 class="text-lg font-medium text-gray-900">
+              <%= @membership.user.first_name %> <%= @membership.user.last_name %>
+            </h3>
+            <p class="text-gray-500"><%= @membership.user.email %></p>
+          </div>
+        </div>
+        <div class="border-t border-gray-200 pt-4">
+          <dl class="grid grid-cols-1 gap-4">
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Age</dt>
+              <dd class="text-sm text-gray-900">
+                <% if @membership.user.age.present? %>
+                  <%= @membership.user.age %> years old
+                <% else %>
+                  Not specified
+                <% end %>
+              </dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Age Group</dt>
+              <dd class="text-sm text-gray-900">
+                <% if @membership.user.age.present? %>
+                  <%= @membership.user.age_group %>
+                <% else %>
+                  Not specified
+                <% end %>
+              </dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Phone Number</dt>
+              <dd class="text-sm text-gray-900">
+                <% if @membership.user.phone_number.present? %>
+                  <%= @membership.user.formatted_phone_number %>
+                <% else %>
+                  Not specified
+                <% end %>
+              </dd>
+            </div>
+            <div>
+              <dt class="text-sm font-medium text-gray-500">Account Type</dt>
+              <dd class="text-sm text-gray-900">
+                <% if @membership.user.age.present? %>
+                  <%= @membership.user.minor? ? 'Minor' : 'Adult' %>
+                  <% if @membership.user.minor? && @membership.user.parental_consent_valid? %>
+                    <span class="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                      Parental Consent Valid
+                    </span>
+                  <% elsif @membership.user.minor? %>
+                    <span class="ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                      Parental Consent Required
+                    </span>
+                  <% end %>
+                <% else %>
+                  Not specified
+                <% end %>
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    <% elsif @membership.user && !@membership.user.profile_completed? %>
+      <!-- Profile Incomplete -->
+      <div class="text-center py-8">
+        <svg class="mx-auto h-16 w-16 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 mt-4">Profile Incomplete</h3>
+        <p class="text-gray-500 mt-2">This user has been invited but hasn't completed their profile yet.</p>
+        <div class="mt-4 space-y-3">
+          <div class="p-4 bg-yellow-50 rounded-lg">
+            <p class="text-sm font-medium text-yellow-900">User Email:</p>
+            <p class="text-yellow-800"><%= @membership.user.email %></p>
+          </div>
+          <% if @membership.user.invitation_token %>
+            <div class="p-4 bg-gray-50 rounded-lg">
+              <p class="text-sm font-medium text-gray-600">Invitation Link:</p>
+              <p class="text-xs text-gray-500 mb-2">User needs to complete their profile:</p>
+              <code class="text-xs text-gray-800 bg-white px-2 py-1 rounded break-all">
+                <%= invitation_url(@membership.user.invitation_token) %>
+              </code>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% else %>
+      <!-- Pending Invitation -->
+      <div class="text-center py-8">
+        <svg class="mx-auto h-16 w-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 mt-4">Pending Invitation</h3>
+        <p class="text-gray-500 mt-2">This invitation has not been accepted yet.</p>
+        <% if @membership.last_invited_at && @membership.last_invited_at < 7.days.ago %>
+          <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div class="flex">
+              <svg class="w-5 h-5 text-yellow-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+              </svg>
+              <div class="ml-3">
+                <p class="text-sm text-yellow-800">
+                  <strong>Invitation sent over a week ago.</strong> The user might not have received the email or it may have been lost. Consider resending the invitation.
+                </p>
+              </div>
+            </div>
+          </div>
+        <% end %>
+        <div class="mt-4 space-y-3">
+          <% if @membership.invited_email %>
+            <div class="p-4 bg-blue-50 rounded-lg">
+              <p class="text-sm font-medium text-blue-900">Invited Email:</p>
+              <p class="text-blue-800"><%= @membership.invited_email %></p>
+            </div>
+          <% end %>
+          <% if @membership.invitation_token %>
+            <div class="p-4 bg-gray-50 rounded-lg">
+              <p class="text-sm font-medium text-gray-600">Invitation Link:</p>
+              <p class="text-xs text-gray-500 mb-2">Send this link to the invited user:</p>
+              <code class="text-xs text-gray-800 bg-white px-2 py-1 rounded break-all">
+                <%= invitation_url(@membership.invitation_token) %>
+              </code>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  <!-- Membership Details -->
+  <div class="bg-white shadow rounded-lg p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Membership Details</h2>
+    <dl class="space-y-4">
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Role</dt>
+        <dd class="mt-1">
+          <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full 
+            <%= case @membership.role
+                when 'admin' then 'bg-purple-100 text-purple-800'
+                when 'manager' then 'bg-blue-100 text-blue-800'
+                when 'member' then 'bg-green-100 text-green-800'
+                else 'bg-gray-100 text-gray-800'
+                end %>">
+            <%= @membership.role.humanize %>
+          </span>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Status</dt>
+        <dd class="mt-1">
+          <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full 
+            <%= case @membership.status
+                when 'active' then 'bg-green-100 text-green-800'
+                when 'pending' then 'bg-yellow-100 text-yellow-800'
+                when 'suspended' then 'bg-red-100 text-red-800'
+                when 'rejected' then 'bg-gray-100 text-gray-800'
+                else 'bg-gray-100 text-gray-800'
+                end %>">
+            <%= @membership.status.humanize %>
+          </span>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium text-gray-500">Verification Method</dt>
+        <dd class="mt-1 text-sm text-gray-900">
+          <%= @membership.verification_method&.humanize || 'Not specified' %>
+        </dd>
+      </div>
+      <% if @membership.joined_at %>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Joined Date</dt>
+          <dd class="mt-1 text-sm text-gray-900">
+            <%= @membership.joined_at.strftime("%B %d, %Y at %I:%M %p") %>
+          </dd>
+        </div>
+      <% end %>
+      <% if @membership.requested_at %>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Requested Date</dt>
+          <dd class="mt-1 text-sm text-gray-900">
+            <%= @membership.requested_at.strftime("%B %d, %Y at %I:%M %p") %>
+          </dd>
+        </div>
+      <% end %>
+      <% if @membership.approved_at && @membership.approved_by %>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Approved</dt>
+          <dd class="mt-1 text-sm text-gray-900">
+            <%= @membership.approved_at.strftime("%B %d, %Y at %I:%M %p") %>
+            <br>
+            <span class="text-xs text-gray-500">
+              by <% if @membership.approved_by.profile_completed? %>
+                <%= @membership.approved_by.first_name %> <%= @membership.approved_by.last_name %>
+              <% else %>
+                <%= @membership.approved_by.email %>
+              <% end %>
+            </span>
+          </dd>
+        </div>
+      <% end %>
+      <% if @membership.invited_by %>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Invited By</dt>
+          <dd class="mt-1 text-sm text-gray-900">
+            <% if @membership.invited_by.profile_completed? %>
+              <%= @membership.invited_by.first_name %> <%= @membership.invited_by.last_name %>
+            <% else %>
+              <%= @membership.invited_by.email %>
+            <% end %>
+            <br>
+            <span class="text-xs text-gray-500"><%= @membership.invited_by.email %></span>
+          </dd>
+        </div>
+      <% end %>
+      <% if @membership.last_invited_at %>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Last Invitation Sent</dt>
+          <dd class="mt-1 text-sm text-gray-900">
+            <%= @membership.last_invited_at.strftime("%B %d, %Y at %I:%M %p") %>
+            <br>
+            <span class="text-xs text-gray-500">
+              <%= time_ago_in_words(@membership.last_invited_at) %> ago
+            </span>
+          </dd>
+        </div>
+      <% end %>
+      <% if @membership.verification_notes.present? %>
+        <div>
+          <dt class="text-sm font-medium text-gray-500">Notes</dt>
+          <dd class="mt-1 text-sm text-gray-900">
+            <%= simple_format(@membership.verification_notes) %>
+          </dd>
+        </div>
+      <% end %>
+    </dl>
+  </div>
+</div>
+<!-- Permissions Section (only if user exists, profile completed, and has permissions) -->
+<% if @membership.user && @membership.user.profile_completed? && @membership.permissions.any? %>
+  <div class="mt-8 bg-white shadow rounded-lg p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Permissions</h2>
+    <% @membership.permissions_by_category.each do |category, permissions| %>
+      <div class="mb-6 last:mb-0">
+        <h3 class="text-md font-medium text-gray-800 mb-3 capitalize">
+          <%= category.humanize %> Permissions
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+          <% permissions.each do |permission| %>
+            <div class="flex items-center px-3 py-2 bg-gray-50 rounded-lg">
+              <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+              <span class="text-sm text-gray-700"><%= permission.name.humanize %></span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>
+<!-- Action Buttons -->
+<div class="mt-8 flex flex-wrap gap-3">
+  <% if policy(@membership).re_invite? %>
+    <%= link_to "Resend Invitation", re_invite_organization_organization_membership_path(@organization, @membership), 
+        class: "inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700",
+        data: { 
+          turbo_method: :post,
+          turbo_confirm: "Are you sure you want to resend the invitation to #{@membership.invited_email}?" 
+        } %>
+  <% end %>
+  <% if policy(@membership).approve? %>
+    <%= link_to "Approve Membership", approve_organization_organization_membership_path(@organization, @membership), 
+        class: "inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700",
+        data: { 
+          turbo_method: :patch,
+          turbo_confirm: "Are you sure you want to approve this membership?" 
+        } %>
+  <% end %>
+  <% if policy(@membership).reject? %>
+    <%= link_to "Reject Membership", reject_organization_organization_membership_path(@organization, @membership), 
+        class: "inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700",
+        data: { 
+          turbo_method: :patch,
+          turbo_confirm: "Are you sure you want to reject this membership?" 
+        } %>
+  <% end %>
+  <% if policy(@membership).suspend? %>
+    <%= link_to "Suspend Member", suspend_organization_organization_membership_path(@organization, @membership), 
+        class: "inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-yellow-600 hover:bg-yellow-700",
+        data: { 
+          turbo_method: :patch,
+          turbo_confirm: "Are you sure you want to suspend this membership?" 
+        } %>
+  <% end %>
+  <% if policy(@membership).reactivate? %>
+    <%= link_to "Reactivate Member", reactivate_organization_organization_membership_path(@organization, @membership), 
+        class: "inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700",
+        data: { 
+          turbo_method: :patch,
+          turbo_confirm: "Are you sure you want to reactivate this membership?" 
+        } %>
+  <% end %>
+  <% if policy(@membership).destroy? %>
+    <%= link_to "Remove Member", organization_organization_membership_path(@organization, @membership), 
+        class: "inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50",
+        data: { 
+          turbo_method: :delete,
+          turbo_confirm: "Are you sure you want to remove this member from the organization?" 
+        } %>
+  <% end %>
+</div>

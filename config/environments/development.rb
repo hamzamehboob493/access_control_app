@@ -31,14 +31,33 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
-  # Don't care if the mailer can't send.
-  config.action_mailer.raise_delivery_errors = false
-
-  # Make template changes take effect immediately.
+  # Configure Action Mailer for development
+  config.action_mailer.raise_delivery_errors = true
+  config.action_mailer.perform_deliveries = true
+  config.action_mailer.delivery_method = :smtp
   config.action_mailer.perform_caching = false
 
   # Set localhost to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
+
+  # For development, you can use different delivery methods:
+  # Option 1: Use letter_opener gem to open emails in browser (ACTIVE)
+  config.action_mailer.delivery_method = :letter_opener
+  
+  # Option 2: Log emails to files (alternative)
+  # config.action_mailer.delivery_method = :file
+  # config.action_mailer.file_settings = { location: Rails.root.join('tmp/mails') }
+
+  # Option 3: Use a real SMTP service like Gmail (configure with your credentials)
+  # config.action_mailer.smtp_settings = {
+  #   address: 'smtp.gmail.com',
+  #   port: 587,
+  #   domain: 'localhost:3000',
+  #   user_name: ENV['GMAIL_USERNAME'],
+  #   password: ENV['GMAIL_PASSWORD'],
+  #   authentication: 'plain',
+  #   enable_starttls_auto: true
+  # }
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log

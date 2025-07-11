@@ -4,6 +4,11 @@ class UsersController < ApplicationController
 
   def new
     @user = User.new
+
+    # If invitation token is present, redirect to invitation flow
+    if params[:invitation_token].present?
+      redirect_to invitation_path(params[:invitation_token])
+    end
   end
 
   def create
@@ -22,6 +27,14 @@ class UsersController < ApplicationController
         # Set user session
         session[:user_id] = @user.id
         Rails.logger.info "User created successfully: #{@user.email}"
+
+        # Handle invitation acceptance if present
+        if params[:invitation_token].present?
+          # Redirect to invitation flow instead of handling here
+          redirect_to invitation_path(params[:invitation_token]),
+                      notice: "Please complete the invitation process to join the organization."
+          return
+        end
 
         # Handle age-based registration flow
         if @user.minor?

@@ -10,7 +10,6 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Defines the root path route ("/")
-  # root "posts#index"
   # Authentication routes
   get "/login", to: "sessions#new"
   post "/login", to: "sessions#create"
@@ -29,13 +28,28 @@ Rails.application.routes.draw do
   resources :parental_consents, only: [ :show, :new, :create, :edit, :update ]
   get "/parental-consent/verify/:token", to: "parental_consents#verify", as: :verify_parental_consent
 
+  # Public invitation acceptance
+  get "/invitations/:token", to: "invitations#show", as: :invitation
+  post "/invitations/:token", to: "invitations#accept", as: :accept_invitation
+
   # Organizations
   resources :organizations do
     member do
       get :analytics
     end
 
-    resources :organization_memberships, only: [ :index, :create, :update, :destroy ]
+    resources :organization_memberships, only: [ :index, :show, :new, :create, :update, :destroy ] do
+      collection do
+        post :invite
+      end
+      member do
+        patch :approve
+        patch :reject
+        patch :suspend
+        patch :reactivate
+        post :re_invite
+      end
+    end
     resources :participation_spaces
   end
 

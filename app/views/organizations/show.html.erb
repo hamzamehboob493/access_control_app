@@ -22,6 +22,12 @@
 
   <!-- Action Buttons -->
   <div class="flex flex-wrap gap-3">
+    <% if policy(@organization).manage_members? %>
+      <%= link_to 'Manage Members',
+            organization_organization_memberships_path(@organization),
+            class: 'inline-flex items-center justify-center px-5 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg shadow-sm hover:bg-purple-700 transition' %>
+    <% end %>
+
     <% if policy(@organization).update? %>
       <%= link_to 'Edit Organization',
             edit_organization_path(@organization),

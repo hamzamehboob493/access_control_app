@@ -1,0 +1,30 @@
+You're invited to join <%= @organization.name %>!
+Hi there!
+<%= @invited_by.first_name %> <%= @invited_by.last_name %> has invited you to join <%= @organization.name %> as a <%= @role.humanize %>.
+ORGANIZATION DETAILS:
+Name: <%= @organization.name %>
+Type: <%= @organization.organization_type.humanize %> Organization
+<% if @organization.description.present? %>
+  Description: <%= @organization.description %>
+<% end %>
+YOUR INVITATION:
+Email: <%= @invited_email %>
+Role: <%= @role.humanize %>
+Invited by: <%= @invited_by.first_name %> <%= @invited_by.last_name %> (<%= @invited_by.email %>)
+TO ACCEPT THIS INVITATION:
+Click the link below or copy and paste it into your browser:
+<%= @invitation_url %>
+WHAT HAPPENS NEXT:
+1. Click the invitation link above
+2. Fill out your profile information (name, date of birth, phone, password)
+3. You'll automatically become a <%= @role %> of <%= @organization.name %>
+4. Start collaborating with your new team!
+NEED TO COMPLETE:
+- First and Last Name
+- Date of Birth (for age verification)
+- Phone Number
+- Create a Password
+If you have any questions about this invitation, please contact <%= @invited_by.email %>.
+This invitation was sent to <%= @invited_email %>.
+---
+© <%= Date.current.year %> Access Control App. All rights reserved.

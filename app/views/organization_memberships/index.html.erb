@@ -1,0 +1,333 @@
+<div class="bg-white shadow-xl rounded-2xl p-8 mb-10">
+  <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
+        <%= @organization.name %> - Members
+      </h1>
+      <p class="mt-2 text-gray-600">
+        Manage organization memberships and approvals
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-3">
+      <% if policy(@organization).invite_members? %>
+        <button onclick="toggleInviteForm()" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+          </svg>
+          Invite Members
+        </button>
+      <% end %>
+      <%= link_to "Back to Organization", @organization, 
+          class: "inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50" %>
+    </div>
+  </div>
+</div>
+<!-- Status Filter and Stats -->
+<div class="bg-white rounded-xl p-6 mb-6 shadow-sm">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="text-center">
+      <div class="text-2xl font-bold text-blue-600"><%= @active_count %></div>
+      <div class="text-sm text-gray-500">Active Members</div>
+    </div>
+    <div class="text-center">
+      <div class="text-2xl font-bold text-yellow-600"><%= @pending_count %></div>
+      <div class="text-sm text-gray-500">Pending Approval</div>
+    </div>
+    <div class="text-center">
+      <div class="text-2xl font-bold text-gray-600"><%= @memberships.count %></div>
+      <div class="text-sm text-gray-500">Total Displayed</div>
+    </div>
+    <div class="text-center">
+      <div class="text-2xl font-bold text-green-600"><%= @organization.member_count %></div>
+      <div class="text-sm text-gray-500">Organization Total</div>
+    </div>
+  </div>
+  <!-- Filter Tabs -->
+  <div class="border-b border-gray-200">
+    <nav class="-mb-px flex space-x-8">
+      <%= link_to "All", organization_organization_memberships_path(@organization), 
+          class: "py-2 px-1 border-b-2 font-medium text-sm #{'border-indigo-500 text-indigo-600' if params[:status].blank?} #{'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' unless params[:status].blank?}" %>
+      <%= link_to "Active", organization_organization_memberships_path(@organization, status: 'active'), 
+          class: "py-2 px-1 border-b-2 font-medium text-sm #{'border-indigo-500 text-indigo-600' if params[:status] == 'active'} #{'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' unless params[:status] == 'active'}" %>
+      <%= link_to "Pending", organization_organization_memberships_path(@organization, status: 'pending'), 
+          class: "py-2 px-1 border-b-2 font-medium text-sm #{'border-indigo-500 text-indigo-600' if params[:status] == 'pending'} #{'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' unless params[:status] == 'pending'}" %>
+      <%= link_to "Suspended", organization_organization_memberships_path(@organization, status: 'suspended'), 
+          class: "py-2 px-1 border-b-2 font-medium text-sm #{'border-indigo-500 text-indigo-600' if params[:status] == 'suspended'} #{'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' unless params[:status] == 'suspended'}" %>
+    </nav>
+  </div>
+</div>
+<!-- Invite Form (Hidden by default) -->
+<div id="invite-form" class="hidden bg-white rounded-xl p-6 mb-6 shadow-sm border border-indigo-200">
+  <h3 class="text-lg font-semibold text-gray-800 mb-4">Invite New Member</h3>
+  <%= form_with url: invite_organization_organization_memberships_path(@organization), method: :post, local: true, class: "space-y-4" do |form| %>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <%= form.label :email, "Email Address", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.email_field :email, 
+            class: "w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500",
+            placeholder: "user@example.com",
+            required: true %>
+      </div>
+      <div>
+        <%= form.label :role, "Role", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= form.select :role, 
+            options_for_select([
+              ['Member', 'member'],
+              ['Manager', 'manager'],
+              ['Admin', 'admin']
+            ], 'member'),
+            {},
+            { class: "w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" } %>
+      </div>
+    </div>
+    <div class="flex justify-end space-x-3">
+      <button type="button" onclick="toggleInviteForm()" class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+        Cancel
+      </button>
+      <%= form.submit "Send Invitation", 
+          class: "px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700" %>
+    </div>
+  <% end %>
+</div>
+<!-- Memberships Table -->
+<div class="bg-white shadow-sm rounded-xl overflow-hidden">
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Member
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Role
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Status
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Joined
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Verification
+          </th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Actions
+          </th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-gray-200">
+        <% @memberships.each do |membership| %>
+          <tr class="hover:bg-gray-50">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 h-10 w-10">
+                  <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                    <% if membership.user && membership.user.profile_completed? %>
+                      <span class="text-indigo-600 font-medium text-sm">
+                        <%= membership.user.first_name[0] %><%= membership.user.last_name[0] %>
+                      </span>
+                    <% else %>
+                      <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
+                      </svg>
+                    <% end %>
+                  </div>
+                </div>
+                <div class="ml-4">
+                  <% if membership.user && membership.user.profile_completed? %>
+                    <div class="text-sm font-medium text-gray-900">
+                      <%= membership.user.first_name %> <%= membership.user.last_name %>
+                    </div>
+                    <div class="text-sm text-gray-500">
+                      <%= membership.user.email %>
+                    </div>
+                    <div class="text-xs text-gray-400">
+                      <% if membership.user.age.present? %>
+                        Age: <%= membership.user.age %> (<%= membership.user.age_group %>)
+                      <% else %>
+                        Profile completion pending
+                      <% end %>
+                    </div>
+                  <% elsif membership.user && !membership.user.profile_completed? %>
+                    <div class="text-sm font-medium text-gray-900">
+                      Profile Incomplete
+                    </div>
+                    <div class="text-sm text-gray-500">
+                      <%= membership.user.email %>
+                    </div>
+                    <div class="text-xs text-gray-400">
+                      <% if membership.invited_by %>
+                        Invited by <% if membership.invited_by.profile_completed? %>
+                          <%= membership.invited_by.first_name %>
+                        <% else %>
+                          <%= membership.invited_by.email %>
+                        <% end %> • 
+                        <% if membership.last_invited_at %>
+                          Last sent <%= time_ago_in_words(membership.last_invited_at) %> ago
+                        <% else %>
+                          <%= time_ago_in_words(membership.created_at) %> ago
+                        <% end %>
+                      <% else %>
+                        Created <%= time_ago_in_words(membership.created_at) %> ago
+                      <% end %>
+                    </div>
+                  <% else %>
+                    <div class="text-sm font-medium text-gray-900">
+                      Pending Invitation
+                    </div>
+                    <div class="text-sm text-gray-500">
+                      <%= membership.invited_email %>
+                    </div>
+                    <div class="text-xs text-gray-400">
+                      <% if membership.invited_by %>
+                        Invited by <% if membership.invited_by.profile_completed? %>
+                          <%= membership.invited_by.first_name %>
+                        <% else %>
+                          <%= membership.invited_by.email %>
+                        <% end %> • 
+                        <% if membership.last_invited_at %>
+                          Last sent <%= time_ago_in_words(membership.last_invited_at) %> ago
+                        <% else %>
+                          <%= time_ago_in_words(membership.created_at) %> ago
+                        <% end %>
+                      <% else %>
+                        Created <%= time_ago_in_words(membership.created_at) %> ago
+                      <% end %>
+                    </div>
+                  <% end %>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                <%= case membership.role
+                    when 'admin' then 'bg-purple-100 text-purple-800'
+                    when 'manager' then 'bg-blue-100 text-blue-800'
+                    when 'member' then 'bg-green-100 text-green-800'
+                    else 'bg-gray-100 text-gray-800'
+                    end %>">
+                <%= membership.role.humanize %>
+              </span>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                <%= case membership.status
+                    when 'active' then 'bg-green-100 text-green-800'
+                    when 'pending' then 'bg-yellow-100 text-yellow-800'
+                    when 'suspended' then 'bg-red-100 text-red-800'
+                    when 'rejected' then 'bg-gray-100 text-gray-800'
+                    else 'bg-gray-100 text-gray-800'
+                    end %>">
+                <%= membership.status.humanize %>
+              </span>
+              <% if membership.status == 'pending' && membership.last_invited_at && membership.last_invited_at < 7.days.ago %>
+                <div class="mt-1">
+                  <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                    Needs Re-invite
+                  </span>
+                </div>
+              <% end %>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <% if membership.joined_at %>
+                <%= membership.joined_at.strftime("%b %d, %Y") %>
+              <% elsif membership.requested_at %>
+                <span class="text-yellow-600">Requested: <%= membership.requested_at.strftime("%b %d, %Y") %></span>
+              <% else %>
+                <span class="text-gray-400">Not joined</span>
+              <% end %>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              <% if membership.verification_method.present? %>
+                <span class="capitalize"><%= membership.verification_method.humanize %></span>
+              <% end %>
+              <% if membership.approved_by.present? %>
+                <div class="text-xs text-gray-400">
+                  by <% if membership.approved_by.profile_completed? %>
+                    <%= membership.approved_by.first_name %>
+                  <% else %>
+                    <%= membership.approved_by.email %>
+                  <% end %>
+                </div>
+              <% end %>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+              <div class="flex space-x-2">
+                <%= link_to "View", organization_organization_membership_path(@organization, membership), 
+                    class: "text-indigo-600 hover:text-indigo-900" %>
+                <% if policy(membership).re_invite? %>
+                  <%= link_to "Re-invite", re_invite_organization_organization_membership_path(@organization, membership), 
+                      class: "text-purple-600 hover:text-purple-900",
+                      data: { 
+                        turbo_method: :post,
+                        turbo_confirm: "Are you sure you want to resend the invitation to #{membership.invited_email}?" 
+                      } %>
+                <% end %>
+                <% if policy(membership).approve? %>
+                  <%= link_to "Approve", approve_organization_organization_membership_path(@organization, membership), 
+                      class: "text-green-600 hover:text-green-900",
+                      data: { 
+                        turbo_method: :patch,
+                        turbo_confirm: "Are you sure you want to approve this membership?" 
+                      } %>
+                <% end %>
+                <% if policy(membership).reject? %>
+                  <%= link_to "Reject", reject_organization_organization_membership_path(@organization, membership), 
+                      class: "text-red-600 hover:text-red-900",
+                      data: { 
+                        turbo_method: :patch,
+                        turbo_confirm: "Are you sure you want to reject this membership?" 
+                      } %>
+                <% end %>
+                <% if policy(membership).suspend? %>
+                  <%= link_to "Suspend", suspend_organization_organization_membership_path(@organization, membership), 
+                      class: "text-yellow-600 hover:text-yellow-900",
+                      data: { 
+                        turbo_method: :patch,
+                        turbo_confirm: "Are you sure you want to suspend this membership?" 
+                      } %>
+                <% end %>
+                <% if policy(membership).reactivate? %>
+                  <%= link_to "Reactivate", reactivate_organization_organization_membership_path(@organization, membership), 
+                      class: "text-blue-600 hover:text-blue-900",
+                      data: { 
+                        turbo_method: :patch,
+                        turbo_confirm: "Are you sure you want to reactivate this membership?" 
+                      } %>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <% if @memberships.empty? %>
+    <div class="text-center py-12">
+      <div class="text-gray-500 text-lg">No memberships found</div>
+      <p class="text-gray-400 mt-2">There are no memberships matching your current filter.</p>
+    </div>
+  <% end %>
+</div>
+<!-- Pagination -->
+<% if @memberships.respond_to?(:current_page) %>
+  <div class="mt-6 flex justify-center">
+    <%= paginate @memberships %>
+  </div>
+<% end %>
+<script>
+  function toggleInviteForm() {
+    const form = document.getElementById('invite-form');
+    if (form.classList.contains('hidden')) {
+      form.classList.remove('hidden');
+      // Focus on email input
+      const emailInput = form.querySelector('input[type="email"]');
+      if (emailInput) emailInput.focus();
+    } else {
+      form.classList.add('hidden');
+      // Clear form
+      const formElement = form.querySelector('form');
+      if (formElement) formElement.reset();
+    }
+  }
+</script>

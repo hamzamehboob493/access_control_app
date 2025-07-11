@@ -1,51 +1,218 @@
-<div class="max-w-6xl mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold text-gray-800 mb-6">Organization Analytics</h1>
-
-  <!-- Stats Cards -->
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+<div class="max-w-7xl mx-auto px-4 py-8">
+  <div class="bg-white shadow-xl rounded-2xl p-8 mb-10">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Organization Analytics</h1>
+    <p class="text-gray-600">Comprehensive analytics for <%= @organization.name %></p>
+  </div>
+  <!-- Enhanced Stats Cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
     <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
       <h2 class="text-sm font-medium text-gray-500">Total Members</h2>
       <p class="mt-2 text-2xl font-bold text-indigo-600"><%= @analytics_data[:total_members] %></p>
+      <p class="text-xs text-gray-400 mt-1">Active memberships</p>
     </div>
-
     <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-      <h2 class="text-sm font-medium text-gray-500">Roles</h2>
-      <% @analytics_data[:members_by_role].each do |role, count| %>
-        <p class="mt-1 text-sm text-gray-700 capitalize"><%= role %>: <span class="font-semibold"><%= count %></span></p>
+      <h2 class="text-sm font-medium text-gray-500">Active Rules</h2>
+      <p class="mt-2 text-2xl font-bold text-green-600"><%= @analytics_data[:active_rules] %></p>
+      <p class="text-xs text-gray-400 mt-1">Participation rules</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+      <h2 class="text-sm font-medium text-gray-500">Rule Violations</h2>
+      <p class="mt-2 text-2xl font-bold text-red-600"><%= @analytics_data[:rule_violations].values.sum %></p>
+      <p class="text-xs text-gray-400 mt-1">Total violations</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+      <h2 class="text-sm font-medium text-gray-500">Organization Type</h2>
+      <p class="mt-2 text-lg font-bold text-gray-800 capitalize"><%= @organization.organization_type %></p>
+      <p class="text-xs text-gray-400 mt-1">
+        <% if @organization.verified? %>
+          <span class="text-green-600">✓ Verified</span>
+        <% else %>
+          <span class="text-yellow-600">⚠ Unverified</span>
+        <% end %>
+      </p>
+    </div>
+  </div>
+  <!-- Charts Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+    <!-- Roles Distribution -->
+    <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">Members by Role</h2>
+      <% if @analytics_data[:members_by_role].any? %>
+        <%= pie_chart @analytics_data[:members_by_role].transform_keys(&:humanize), 
+            library: { backgroundColor: ['#6366F1', '#06B6D4', '#10B981', '#F59E0B'] } %>
+      <% else %>
+        <p class="text-sm text-gray-500">No role data available.</p>
       <% end %>
     </div>
-
+    <!-- Age Groups Distribution -->
     <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-      <h2 class="text-sm font-medium text-gray-500">Age Groups</h2>
-      <% @analytics_data[:members_by_age_group].each do |age_group, count| %>
-        <p class="mt-1 text-sm text-gray-700 capitalize"><%= age_group.presence || 'Unknown' %>: <span class="font-semibold"><%= count %></span></p>
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">Members by Age Group</h2>
+      <% if @analytics_data[:members_by_age_group].any? %>
+        <%= pie_chart @analytics_data[:members_by_age_group].map { |group, count| [group || 'Unknown', count] }, 
+            library: { backgroundColor: ['#8B5CF6', '#EC4899', '#EF4444', '#F59E0B', '#10B981'] } %>
+      <% else %>
+        <p class="text-sm text-gray-500">No age group data available.</p>
       <% end %>
     </div>
   </div>
-
-  <!-- Membership Growth Chart -->
-  <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
-    <h2 class="text-lg font-semibold text-gray-800 mb-4">Membership Growth</h2>
-
-    <% if @membership_growth.any? %>
-      <table class="min-w-full divide-y divide-gray-200 text-sm">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-4 py-2 text-left font-medium text-gray-500">Month</th>
-            <th class="px-4 py-2 text-left font-medium text-gray-500">New Members</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          <% @membership_growth.each do |month, count| %>
+  <!-- Rule Violations Analysis -->
+  <% if @analytics_data[:rule_violations].any? %>
+    <div class="bg-white p-6 rounded-lg shadow border border-gray-200 mb-8">
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">Rule Violations by Type</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <%= bar_chart @analytics_data[:rule_violations].transform_keys(&:humanize), 
+              library: { backgroundColor: ['#EF4444', '#F59E0B', '#10B981', '#06B6D4', '#8B5CF6'] } %>
+        </div>
+        <div>
+          <h3 class="font-medium text-gray-700 mb-3">Violation Details</h3>
+          <div class="space-y-2">
+            <% @analytics_data[:rule_violations].each do |type, count| %>
+              <div class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded">
+                <span class="text-sm text-gray-700 capitalize"><%= type.humanize %></span>
+                <span class="text-sm font-semibold text-gray-900"><%= count %></span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+  <!-- Participation Rules Overview -->
+  <div class="bg-white p-6 rounded-lg shadow border border-gray-200 mb-8">
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Participation Rules</h2>
+    <% if @organization.participation_rules.any? %>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
             <tr>
-              <td class="px-4 py-2 text-gray-700"><%= month.strftime("%B %Y") %></td>
-              <td class="px-4 py-2 text-indigo-600 font-semibold"><%= count %></td>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rule</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Violations</th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <% @organization.participation_rules.each do |rule| %>
+              <tr>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="text-sm font-medium text-gray-900"><%= rule.name %></div>
+                  <div class="text-sm text-gray-500"><%= rule.description %></div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                    <%= rule.rule_type.humanize %>
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
+                    <%= rule.active? ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' %>">
+                    <%= rule.active? ? 'Active' : 'Inactive' %>
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <%= rule.priority %>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <%= rule.rule_violations.count %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="text-sm text-gray-500">No participation rules configured.</p>
+    <% end %>
+  </div>
+  <!-- Membership Growth Chart -->
+  <div class="bg-white p-6 rounded-lg shadow border border-gray-200 mb-8">
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Membership Growth</h2>
+    <% if @membership_growth.any? %>
+      <div class="mb-6">
+        <%= line_chart @membership_growth, library: { backgroundColor: '#6366F1' } %>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-2 text-left font-medium text-gray-500">Month</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500">New Members</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @membership_growth.each do |month, count| %>
+              <tr>
+                <td class="px-4 py-2 text-gray-700"><%= month.strftime("%B %Y") %></td>
+                <td class="px-4 py-2 text-indigo-600 font-semibold"><%= count %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     <% else %>
       <p class="text-sm text-gray-500">No membership growth data available.</p>
     <% end %>
+  </div>
+  <!-- Permission Analysis -->
+  <div class="bg-white p-6 rounded-lg shadow border border-gray-200 mb-8">
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Permission Analysis</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <h3 class="font-medium text-gray-700 mb-3">Permissions by Category</h3>
+        <% permission_categories = Permission.group(:category).count %>
+        <% if permission_categories.any? %>
+          <div class="space-y-2">
+            <% permission_categories.each do |category, count| %>
+              <div class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded">
+                <span class="text-sm text-gray-700 capitalize"><%= category.humanize %></span>
+                <span class="text-sm font-semibold text-gray-900"><%= count %></span>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-sm text-gray-500">No permission data available.</p>
+        <% end %>
+      </div>
+      <div>
+        <h3 class="font-medium text-gray-700 mb-3">Most Common Permissions</h3>
+        <% common_permissions = RolePermission.joins(:permission)
+                                              .joins(:organization_membership)
+                                              .where(organization_memberships: { organization: @organization })
+                                              .group('permissions.name')
+                                              .count
+                                              .sort_by(&:last)
+                                              .reverse
+                                              .first(5) %>
+        <% if common_permissions.any? %>
+          <div class="space-y-2">
+            <% common_permissions.each do |permission, count| %>
+              <div class="flex justify-between items-center py-2 px-3 bg-gray-50 rounded">
+                <span class="text-sm text-gray-700"><%= permission.humanize %></span>
+                <span class="text-sm font-semibold text-gray-900"><%= count %></span>
+              </div>
+            <% end %>
+          </div>
+        <% else %>
+          <p class="text-sm text-gray-500">No permission usage data available.</p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <!-- Export Options -->
+  <div class="bg-white p-6 rounded-lg shadow border border-gray-200">
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">Export Options</h2>
+    <div class="flex flex-wrap gap-3">
+      <button class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
+        Export Member Data
+      </button>
+      <button class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition">
+        Export Analytics Report
+      </button>
+      <button class="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition">
+        Export Rule Violations
+      </button>
+    </div>
   </div>
 </div>

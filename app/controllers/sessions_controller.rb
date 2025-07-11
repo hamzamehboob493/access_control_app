@@ -38,6 +38,29 @@ class SessionsController < ApplicationController
       # Set user session
       session[:user_id] = user.id
 
+      # Handle invitation acceptance if present
+      if params[:invitation_token].present?
+        # Find user by invitation token
+        invited_user = User.find_by(invitation_token: params[:invitation_token])
+
+        if invited_user && invited_user.invitation_pending?
+          # Check if this is the correct user for the invitation
+          if invited_user == user
+            # User is logging in with correct account - redirect to complete profile
+            redirect_to invitation_path(params[:invitation_token]),
+                        notice: "Please complete your profile to accept the invitation."
+            return
+          else
+            redirect_to root_path, alert: "This invitation is for a different email address."
+            return
+          end
+        else
+          # Invalid or expired invitation
+          redirect_to root_path, alert: "Invalid or expired invitation."
+          return
+        end
+      end
+
       # Check for age-based restrictions
       if user.minor? && user.requires_parental_consent? && !user.parental_consent_valid?
         redirect_to new_parental_consent_path,

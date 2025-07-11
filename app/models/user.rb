@@ -1,25 +1,74 @@
 class User < ApplicationRecord
-  has_secure_password
+  has_secure_password validations: false
 
   # Associations
   has_many :organization_memberships, dependent: :destroy
   has_many :organizations, through: :organization_memberships
   has_one :parental_consent, dependent: :destroy
+  belongs_to :invited_by, class_name: "User", optional: true
+  has_many :invited_users, class_name: "User", foreign_key: :invited_by_id
 
-  # Validations
+  # Validations - conditional based on profile completion
   validates :email, presence: true, uniqueness: true, format: { with: URI::MailTo::EMAIL_REGEXP }
-  validates :first_name, :last_name, :date_of_birth, presence: true
+  validates :password, presence: true, length: { minimum: 6 }, if: :password_required?
+  validates :first_name, :last_name, :date_of_birth, presence: true, if: :profile_completed?
   validates :phone_number, presence: true, uniqueness: true, format: {
     with: /\A[\+]?[1-9][\d]{0,15}\z/,
     message: "must be a valid phone number (10-15 digits, optional country code)"
-  }
-  validate :date_of_birth_cannot_be_in_the_future
-  validate :phone_number_format
+  }, if: :profile_completed?
+  validate :date_of_birth_cannot_be_in_the_future, if: :date_of_birth_present?
+  validate :phone_number_format, if: :phone_number_present?
 
   # Scopes
   scope :verified, -> { where.not(email_verified_at: nil) }
   scope :minors, -> { where("date_of_birth > ?", Date.today - 18.years) }
   scope :adults, -> { where("date_of_birth < ?", Date.today - 18.years) }
+  scope :invited, -> { where.not(invitation_token: nil) }
+  scope :profile_completed, -> { where(profile_completed: true) }
+
+  # Invitation methods
+  def self.invite!(email, invited_by_user = nil)
+    user = find_or_initialize_by(email: email.downcase.strip)
+
+    if user.persisted? && user.profile_completed?
+      raise "User already exists and has completed profile"
+    end
+
+    # Generate new invitation token (even for existing pending users)
+    user.invitation_token = SecureRandom.urlsafe_base64(32)
+    user.invited_by = invited_by_user if invited_by_user.present?
+    user.profile_completed = false
+    user.invitation_accepted_at = nil  # Reset acceptance timestamp for re-invites
+    user.save!(validate: false)
+
+    user
+  end
+
+  def accept_invitation!(attributes = {})
+    transaction do
+      update!(attributes.merge(
+        invitation_accepted_at: Time.current,
+        invitation_token: nil,
+        profile_completed: true
+      ))
+    end
+  end
+
+  def invited?
+    invitation_token.present?
+  end
+
+  def invitation_accepted?
+    invitation_accepted_at.present?
+  end
+
+  def invitation_pending?
+    invited? && !invitation_accepted?
+  end
+
+  def profile_completed?
+    profile_completed == true
+  end
 
   def age
     return nil unless date_of_birth
@@ -75,6 +124,21 @@ class User < ApplicationRecord
   end
 
   private
+
+  def password_required?
+    # Password is required if it's a new record or password is being changed
+    # But not required for invitation flow until profile is completed
+    return false if invitation_pending?
+    new_record? || password.present?
+  end
+
+  def date_of_birth_present?
+    date_of_birth.present?
+  end
+
+  def phone_number_present?
+    phone_number.present?
+  end
 
   def date_of_birth_cannot_be_in_the_future
     return unless date_of_birth
