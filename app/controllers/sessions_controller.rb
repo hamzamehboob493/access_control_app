@@ -2,6 +2,7 @@ class SessionsController < ApplicationController
   def new
     # Clear any existing flash messages when showing login form
     flash.clear if request.get?
+    redirect_to root_path, notice: "Already signed in ..." if current_user.present?
   end
 
   def create

@@ -3,6 +3,8 @@ class UsersController < ApplicationController
   before_action :ensure_current_user, only: [ :show, :edit, :update ]
 
   def new
+    redirect_to root_path, notice: "Already signed in ..." if current_user.present?
+
     @user = User.new
 
     # If invitation token is present, redirect to invitation flow

@@ -131,7 +131,18 @@
     <h2 class="text-lg font-semibold text-gray-800 mb-4">Membership Growth</h2>
     <% if @membership_growth.any? %>
       <div class="mb-6">
-        <%= line_chart @membership_growth, library: { backgroundColor: '#6366F1' } %>
+        <%= line_chart @membership_growth, 
+                library: { 
+                  backgroundColor: '#6366F1',
+                  scales: {
+                    x: {
+                      type: 'time',
+                      time: {
+                        unit: 'day'
+                      }
+                    }
+                  }
+                } %>
       </div>
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 text-sm">
